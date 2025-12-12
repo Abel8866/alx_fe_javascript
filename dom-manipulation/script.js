@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	const quoteDisplay = document.getElementById('quoteDisplay');
 	const controls = document.getElementById('controls');
 	const newQuoteBtn = document.getElementById('newQuote');
+	const exportBtn = document.getElementById('exportQuotesBtn');
+	const importInput = document.getElementById('importFile');
 
 	// Quotes store (loaded from localStorage if available)
 	const quotes = loadQuotes() || [
@@ -31,6 +33,51 @@ document.addEventListener('DOMContentLoaded', () => {
 		} catch (e) {
 			console.warn('Failed to save quotes to localStorage', e);
 		}
+	}
+
+	function exportQuotes() {
+		try {
+			const data = JSON.stringify(quotes, null, 2);
+			const blob = new Blob([data], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'quotes.json';
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		} catch (e) {
+			alert('Failed to export quotes.');
+			console.error(e);
+		}
+	}
+
+	function importFromJsonFile(event) {
+		const file = event?.target?.files?.[0];
+		if (!file) return;
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			try {
+				const text = e.target?.result;
+				const imported = JSON.parse(text);
+				if (!Array.isArray(imported)) throw new Error('Invalid JSON: expected an array');
+				for (const q of imported) {
+					if (q && typeof q.text === 'string') {
+						quotes.push({ text: q.text, category: typeof q.category === 'string' ? q.category : 'Uncategorized' });
+					}
+				}
+				saveQuotes();
+				const select = document.getElementById('categorySelect');
+				if (select) updateCategoryOptions(select);
+				showRandomQuote();
+				alert('Quotes imported successfully!');
+			} catch (err) {
+				console.error(err);
+				alert('Failed to import quotes: ' + err.message);
+			}
+		};
+		reader.readAsText(file);
 	}
 
 	function getCategories() {
@@ -185,6 +232,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Events
 	if (newQuoteBtn) newQuoteBtn.addEventListener('click', showRandomQuote);
+	if (exportBtn) exportBtn.addEventListener('click', exportQuotes);
+	if (importInput) importInput.addEventListener('change', importFromJsonFile);
 
 	// Initial render
 	showRandomQuote();
