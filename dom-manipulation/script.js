@@ -97,6 +97,22 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 
+	// Optional: push newly added quotes to server (simulation)
+	async function postQuoteToServer(quote) {
+		try {
+			await fetch('https://jsonplaceholder.typicode.com/posts', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ title: quote.text, body: quote.category })
+			});
+			setStatus('Quote sent to server (mock).');
+		} catch (e) {
+			console.warn('Failed to POST quote to server', e);
+		}
+	}
+
 	function exportQuotes() {
 		try {
 			const data = JSON.stringify(quotes, null, 2);
@@ -268,8 +284,11 @@ document.addEventListener('DOMContentLoaded', () => {
 			return;
 		}
 
-		quotes.push({ text, category });
+		const newQ = { text, category };
+		quotes.push(newQ);
 		saveQuotes();
+		// Fire-and-forget server POST simulation
+		postQuoteToServer(newQ);
 
 		// Update categories and respect current selection
 		const dropdown = document.getElementById('categoryFilter');
