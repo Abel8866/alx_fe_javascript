@@ -5,6 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	const exportBtn = document.getElementById('exportQuotesBtn');
 	const importInput = document.getElementById('importFile');
 
+	// Track selected category (persisted)
+	let selectedCategory = 'All';
+
 	// Quotes store (loaded from localStorage if available)
 	const quotes = loadQuotes() || [
 		{ text: 'The only way to do great work is to love what you do.', category: 'Motivation' },
@@ -104,14 +107,18 @@ document.addEventListener('DOMContentLoaded', () => {
 		updateCategoryOptions(dropdown);
 		const saved = localStorage.getItem('lastCategory');
 		if (saved && Array.from(dropdown.options).some(o => o.value === saved)) {
+			selectedCategory = saved;
 			dropdown.value = saved;
+		} else {
+			selectedCategory = dropdown.value || 'All';
 		}
 	}
 
 	function filterQuotes() {
 		const dropdown = document.getElementById('categoryFilter');
 		const chosen = dropdown ? dropdown.value : 'All';
-		try { localStorage.setItem('lastCategory', chosen); } catch (_) {}
+		selectedCategory = chosen;
+		try { localStorage.setItem('lastCategory', selectedCategory); } catch (_) {}
 		showRandomQuote();
 	}
 
@@ -167,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function showRandomQuote() {
 		const select = document.getElementById('categoryFilter') || document.getElementById('categorySelect');
-		const chosen = select ? select.value : 'All';
+		const chosen = select ? select.value : selectedCategory;
 		const pool = chosen && chosen !== 'All' ? quotes.filter(q => q.category === chosen) : quotes.slice();
 
 		if (!pool.length) {
@@ -204,6 +211,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		quotes.push({ text, category });
 		saveQuotes();
+
+		// Update categories and respect current selection
+		const dropdown = document.getElementById('categoryFilter');
+		if (dropdown) {
+			updateCategoryOptions(dropdown);
+			if (Array.from(dropdown.options).some(o => o.value === selectedCategory)) {
+				dropdown.value = selectedCategory;
+			}
+		}
 
 		const select = document.getElementById('categorySelect');
 		if (select) updateCategoryOptions(select);
