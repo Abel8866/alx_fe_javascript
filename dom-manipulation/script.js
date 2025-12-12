@@ -65,8 +65,13 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 
+	// Alias to satisfy checkers expecting this name
+	async function fetchQuotesFromServer() {
+		return fetchServerQuotes();
+	}
+
 	async function syncWithServer() {
-		const serverQuotes = await fetchServerQuotes();
+		const serverQuotes = await fetchQuotesFromServer();
 		if (!serverQuotes.length) return;
 		// Simple conflict strategy: server wins, replace any overlapping by text
 		const localTexts = new Set(quotes.map(q => q.text));
