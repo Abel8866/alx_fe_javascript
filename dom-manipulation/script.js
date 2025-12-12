@@ -85,26 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		return ['All', ...Array.from(set).sort((a, b) => a.localeCompare(b))];
 	}
 
-	function renderCategoryFilter() {
-		const field = document.createElement('div');
-		field.className = 'field';
-
-		const label = document.createElement('label');
-		label.htmlFor = 'categorySelect';
-		label.textContent = 'Filter by category';
-
-		const select = document.createElement('select');
-		select.id = 'categorySelect';
-		updateCategoryOptions(select);
-
-		select.addEventListener('change', () => {
-			showRandomQuote();
-		});
-
-		field.append(label, select);
-		return field;
-	}
-
 	function updateCategoryOptions(selectEl) {
 		const options = getCategories();
 		const current = selectEl.value;
@@ -116,6 +96,23 @@ document.addEventListener('DOMContentLoaded', () => {
 			selectEl.appendChild(opt);
 		}
 		if (options.includes(current)) selectEl.value = current;
+	}
+
+	function populateCategories() {
+		const dropdown = document.getElementById('categoryFilter');
+		if (!dropdown) return;
+		updateCategoryOptions(dropdown);
+		const saved = localStorage.getItem('lastCategory');
+		if (saved && Array.from(dropdown.options).some(o => o.value === saved)) {
+			dropdown.value = saved;
+		}
+	}
+
+	function filterQuotes() {
+		const dropdown = document.getElementById('categoryFilter');
+		const chosen = dropdown ? dropdown.value : 'All';
+		try { localStorage.setItem('lastCategory', chosen); } catch (_) {}
+		showRandomQuote();
 	}
 
 	function createAddQuoteForm() {
@@ -169,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function showRandomQuote() {
-		const select = document.getElementById('categorySelect');
+		const select = document.getElementById('categoryFilter') || document.getElementById('categorySelect');
 		const chosen = select ? select.value : 'All';
 		const pool = chosen && chosen !== 'All' ? quotes.filter(q => q.category === chosen) : quotes.slice();
 
@@ -225,16 +222,18 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Build UI
 	if (controls) {
 		controls.append(
-			renderCategoryFilter(),
 			createAddQuoteForm()
 		);
 	}
 
 	// Events
 	if (newQuoteBtn) newQuoteBtn.addEventListener('click', showRandomQuote);
+	const categoryDropdown = document.getElementById('categoryFilter');
+	if (categoryDropdown) categoryDropdown.addEventListener('change', filterQuotes);
 	if (exportBtn) exportBtn.addEventListener('click', exportQuotes);
 	if (importInput) importInput.addEventListener('change', importFromJsonFile);
 
 	// Initial render
-	showRandomQuote();
+	populateCategories();
+	filterQuotes();
 });
