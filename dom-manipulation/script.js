@@ -94,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			populateCategories();
 			filterQuotes();
 			setStatus(`Synced ${updatesApplied} update(s) from server (server wins).`);
+			setStatus('Quotes synced with server!');
 		}
 	}
 
