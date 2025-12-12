@@ -1,0 +1,24 @@
+{
+  "name": "dynamic-quote-generator",
+  "version": "1.0.0",
+  "description": "A web application that generates dynamic quotes with local and session storage, and JSON import/export functionality.",
+  "main": "src/scripts/app.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "lite-server"
+  },
+  "keywords": [
+    "quotes",
+    "dynamic",
+    "web",
+    "application"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "lite-server": "^2.6.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.5.4"
+  }
+}
