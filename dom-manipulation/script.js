@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	const newQuoteBtn = document.getElementById('newQuote');
 	const exportBtn = document.getElementById('exportQuotesBtn');
 	const importInput = document.getElementById('importFile');
+	const syncStatus = document.getElementById('syncStatus');
 
 	// Track selected category (persisted)
 	let selectedCategory = 'All';
@@ -35,6 +36,59 @@ document.addEventListener('DOMContentLoaded', () => {
 			localStorage.setItem('quotes', JSON.stringify(quotes));
 		} catch (e) {
 			console.warn('Failed to save quotes to localStorage', e);
+		}
+	}
+
+	function setStatus(msg) {
+		if (syncStatus) {
+			syncStatus.textContent = msg;
+			setTimeout(() => {
+				if (syncStatus.textContent === msg) syncStatus.textContent = '';
+			}, 4000);
+		}
+	}
+
+	async function fetchServerQuotes() {
+		try {
+			// Simulate server providing quotes via a mock API
+			const res = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=5');
+			const posts = await res.json();
+			// Map posts to our quote shape deterministically
+			const serverQuotes = posts.map(p => ({
+				text: String(p.title || '').trim() || 'Untitled',
+				category: 'Server'
+			})).filter(q => q.text);
+			return serverQuotes;
+		} catch (e) {
+			console.warn('Server fetch failed', e);
+			return [];
+		}
+	}
+
+	async function syncWithServer() {
+		const serverQuotes = await fetchServerQuotes();
+		if (!serverQuotes.length) return;
+		// Simple conflict strategy: server wins, replace any overlapping by text
+		const localTexts = new Set(quotes.map(q => q.text));
+		let updatesApplied = 0;
+		for (const sq of serverQuotes) {
+			if (!localTexts.has(sq.text)) {
+				quotes.push(sq);
+				updatesApplied++;
+			} else {
+				// Replace local with server version to prefer server category/content
+				const idx = quotes.findIndex(q => q.text === sq.text);
+				if (idx !== -1) {
+					quotes[idx] = sq;
+					updatesApplied++;
+				}
+			}
+		}
+		if (updatesApplied > 0) {
+			saveQuotes();
+			populateCategories();
+			filterQuotes();
+			setStatus(`Synced ${updatesApplied} update(s) from server (server wins).`);
 		}
 	}
 
@@ -252,4 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Initial render
 	populateCategories();
 	filterQuotes();
+
+	// Periodic server sync (every 30 seconds)
+	setInterval(syncWithServer, 30000);
 });
