@@ -3,7 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	const controls = document.getElementById('controls');
 	const newQuoteBtn = document.getElementById('newQuote');
 
-	const quotes = [
+	// Quotes store (loaded from localStorage if available)
+	const quotes = loadQuotes() || [
 		{ text: 'The only way to do great work is to love what you do.', category: 'Motivation' },
 		{ text: 'Life is what happens when you’re busy making other plans.', category: 'Life' },
 		{ text: 'Be yourself; everyone else is already taken.', category: 'Wisdom' },
@@ -11,6 +12,26 @@ document.addEventListener('DOMContentLoaded', () => {
 		{ text: 'I find that the harder I work, the more luck I seem to have.', category: 'Motivation' },
 		{ text: 'I used to think I was indecisive, but now I’m not so sure.', category: 'Humor' }
 	];
+
+	function loadQuotes() {
+		try {
+			const raw = localStorage.getItem('quotes');
+			if (!raw) return null;
+			const parsed = JSON.parse(raw);
+			if (Array.isArray(parsed)) return parsed.filter(q => q && typeof q.text === 'string' && typeof q.category === 'string');
+			return null;
+		} catch (_) {
+			return null;
+		}
+	}
+
+	function saveQuotes() {
+		try {
+			localStorage.setItem('quotes', JSON.stringify(quotes));
+		} catch (e) {
+			console.warn('Failed to save quotes to localStorage', e);
+		}
+	}
 
 	function getCategories() {
 		const set = new Set(quotes.map(q => q.category.trim()).filter(Boolean));
@@ -118,6 +139,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		small.className = 'helper';
 		small.textContent = `Category: ${q.category}`;
 		quoteDisplay.append(p, small);
+
+		// Persist last viewed quote for the session
+		try {
+			sessionStorage.setItem('lastViewedQuote', JSON.stringify(q));
+		} catch (_) {}
 	}
 
 	function addQuote() {
@@ -133,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		quotes.push({ text, category });
+		saveQuotes();
 
 		const select = document.getElementById('categorySelect');
 		if (select) updateCategoryOptions(select);
